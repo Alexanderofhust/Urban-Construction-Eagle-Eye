@@ -1,0 +1,33 @@
+models:
+  # model output name
+  name: segmentation_model
+  # Original model framework
+  platform: onnx
+  # Model input file path
+  model_file_path: ./best.onnx
+  # Describe information such as input and output shapes
+  subgraphs:
+    # model input tensor shape
+    input_size_list:
+      #- 1,3,480,480
+    # input tensor name
+    inputs:
+      #- data
+    # output tensor name
+    outputs:
+      #- segmentation_output
+  # quantification flag
+  quantize: true
+  # Quantify dataset file path (relative yml path)
+  dataset: /home/elf/segformer/segformer_dataset.txt
+  configs:
+    quantized_dtype: asymmetric_quantized-8
+    # rknn.config mean_values
+    mean_values: [127.5,127.5,127.5]
+    # rknn.config std_values
+    std_values: [128.0,128.0,128.0]
+    # rknn.config quant_img_RGB2BGR
+    quant_img_RGB2BGR: false
+    # rknn.config quantized_algorithm
+    quantized_algorithm: kl_divergence
+    single_core_mode: true
