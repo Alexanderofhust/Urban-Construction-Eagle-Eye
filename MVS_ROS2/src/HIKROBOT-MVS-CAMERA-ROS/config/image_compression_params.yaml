@@ -1,0 +1,6 @@
+image_compression_node:
+  ros__parameters:
+    input_topic: "/hikrobot_camera/rgb"
+    output_topic: "/compressed_image"
+    compression_quality: 80  # JPEG质量 (1-100, 数值越高质量越好文件越大)
+    compression_format: "jpg"  # 支持 "jpg", "jpeg", "png"

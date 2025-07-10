@@ -1,0 +1,21 @@
+# UNet分割节点配置文件
+image_inference_node:
+  ros__parameters:
+    # 模型路径 - 请修改为你的实际UNet模型路径
+    model_path: "best.onnx"
+    
+    # 推理置信度阈值 (用于像素占比统计)
+    confidence_threshold: 0.1
+    
+    # 输入话题名称
+    input_topic: "/hikrobot_camera/rgb"
+    
+    # 输出话题名称
+    output_topic: "/inference/results"
+    
+    # 可视化话题名称
+    visualization_topic: "/inference/visualization"
+    
+    # UNet模型参数
+    input_size: 480       # 输入图像尺寸 (480x480)
+    num_classes: 3        # 分割类别数 (包括背景)

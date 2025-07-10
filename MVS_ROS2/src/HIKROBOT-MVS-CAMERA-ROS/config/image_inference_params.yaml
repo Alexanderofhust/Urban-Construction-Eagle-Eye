@@ -1,0 +1,17 @@
+# YOLOv8分割节点配置文件
+image_inference_node:
+  ros__parameters:
+    # 模型路径 - 请修改为你的实际YOLOv8s-seg模型路径
+    model_path: "yolov8s-seg.onnx"
+    
+    # 推理置信度阈值
+    confidence_threshold: 0.5
+    
+    # 输入话题名称
+    input_topic: "/hikrobot_camera/rgb"
+    
+    # 输出话题名称
+    output_topic: "/inference/results"
+    
+    # 可视化话题名称
+    visualization_topic: "/inference/visualization"
