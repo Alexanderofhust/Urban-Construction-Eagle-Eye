@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>点云可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="pcdContainer" style="width: 100%; height: 800px;"></div>
+
+    <script>
+        // 初始化Three.js场景
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById("pcdContainer").appendChild(renderer.domElement);
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);  // 支持鼠标旋转
+
+        // 从后端加载点云数据（假设后端提供点云坐标接口）
+        async function loadPCD(buildingId) {
+            const res = await fetch(`/get_pcd_data?building_id=${buildingId}`);
+            const pcdData = await res.json();  // 格式：{points: [[x,y,z], ...], colors: [[r,g,b], ...]}
+
+            // 创建点云几何体
+            const geometry = new THREE.BufferGeometry().setFromPoints(
+                pcdData.points.map(p => new THREE.Vector3(p[0], p[1], p[2]))
+            );
+            // 设置颜色（受损点标红，正常点标灰）
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(
+                pcdData.colors.flat(), 3
+            ));
+            // 创建点云材质
+            const material = new THREE.PointsMaterial({ size: 0.01, vertexColors: THREE.VertexColors });
+            const points = new THREE.Points(geometry, material);
+            scene.add(points);
+
+            camera.position.z = 5;  // 调整相机位置
+        }
+
+        // 渲染循环
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // 加载当前建筑的点云（从URL参数获取building_id）
+        const buildingId = new URLSearchParams(window.location.search).get('building_id');
+        loadPCD(buildingId);
+        animate();
+    </script>
+</body>
+</html>
