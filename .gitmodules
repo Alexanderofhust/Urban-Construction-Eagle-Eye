@@ -1,0 +1,6 @@
+[submodule "AnnotationTool"]
+	path = AnnotationTool
+	url = https://github.com/Yuanforz/QuickMask.git
+[submodule "TrainModel"]
+	path = TrainModel
+	url = https://github.com/Yuanforz/QianTrain.git
