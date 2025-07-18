@@ -1,0 +1,624 @@
+/* 组件样式 */
+
+/* 点云可视化组件 */
+.pointcloud-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    height: calc(100vh - 200px);
+}
+
+.pointcloud-viewer {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1rem;
+    position: relative;
+}
+
+.canvas-container {
+    width: 100%;
+    height: calc(100% - 60px);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+}
+
+.viewer-controls {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pointcloud-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.info-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.info-panel h4 {
+    margin-bottom: 1rem;
+    color: #ffffff;
+    font-size: 1.2rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.info-value {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.map-container {
+    flex: 1;
+}
+
+.map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.map-header h4 {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.map-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.map-view {
+    height: 350px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+/* 复检组件 */
+.review-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    height: calc(100vh - 200px);
+}
+
+.defects-list {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.defects-list h4 {
+    margin-bottom: 1rem;
+    color: #ffffff;
+    font-size: 1.2rem;
+}
+
+.defects-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+}
+
+.defect-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.defect-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(5px);
+}
+
+.defect-item.active {
+    border-color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.defect-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.defect-id {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.severity-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.severity-high {
+    background: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
+}
+
+.severity-medium {
+    background: rgba(255, 212, 59, 0.3);
+    color: #ffd43b;
+}
+
+.severity-low {
+    background: rgba(81, 207, 102, 0.3);
+    color: #51cf66;
+}
+
+.defect-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.review-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.review-header h4 {
+    color: #ffffff;
+    font-size: 1.2rem;
+}
+
+.defect-severity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.severity-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.severity-value {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.review-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    flex: 1;
+}
+
+.image-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.image-panel h5 {
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.review-image {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.review-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.review-progress {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+/* 分析组件 */
+.analysis-container {
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #00d4ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.analysis-results {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.analysis-header h3 {
+    color: #ffffff;
+    font-size: 1.5rem;
+}
+
+.condition-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+}
+
+.condition-badge.excellent {
+    background: rgba(81, 207, 102, 0.3);
+    color: #51cf66;
+}
+
+.condition-badge.good {
+    background: rgba(116, 185, 255, 0.3);
+    color: #74b9ff;
+}
+
+.condition-badge.fair {
+    background: rgba(255, 212, 59, 0.3);
+    color: #ffd43b;
+}
+
+.condition-badge.poor {
+    background: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
+}
+
+.condition-badge.dangerous {
+    background: rgba(214, 48, 49, 0.3);
+    color: #d63031;
+}
+
+.condition-text {
+    font-size: 1.1rem;
+}
+
+.condition-score {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.analysis-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.analysis-section {
+    margin-bottom: 2rem;
+}
+
+.analysis-section h4 {
+    color: #ffffff;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.analysis-text {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+}
+
+.defects-list, .suggestions-list {
+    list-style: none;
+    padding: 0;
+}
+
+.defects-list li, .suggestions-list li {
+    padding: 0.5rem 0;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.defects-list li:before {
+    content: "⚠️";
+    margin-right: 0.5rem;
+}
+
+.suggestions-list li:before {
+    content: "💡";
+    margin-right: 0.5rem;
+}
+
+.urgency-section {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.urgency-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.urgency-indicator.high {
+    background: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
+}
+
+.urgency-indicator.medium {
+    background: rgba(255, 212, 59, 0.3);
+    color: #ffd43b;
+}
+
+.urgency-indicator.low {
+    background: rgba(81, 207, 102, 0.3);
+    color: #51cf66;
+}
+
+/* 统计组件 */
+.statistics-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.stat-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.stat-panel h4 {
+    color: #ffffff;
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.stat-value {
+    color: #00d4ff;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.defect-distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.defect-type {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.defect-type:last-child {
+    border-bottom: none;
+}
+
+.defect-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.defect-color.red {
+    background: #ff6b6b;
+}
+
+.defect-color.blue {
+    background: #74b9ff;
+}
+
+.defect-color.green {
+    background: #51cf66;
+}
+
+.defect-name {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.defect-count {
+    color: #00d4ff;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    .pointcloud-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .review-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .analysis-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .review-images {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .defects-grid {
+        max-height: 400px;
+    }
+    
+    .review-image {
+        height: 200px;
+    }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}

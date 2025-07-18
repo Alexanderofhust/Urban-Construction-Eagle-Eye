@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缺陷审查 - 建筑缺陷检测可视化系统</title>
+    <link rel="stylesheet" href="/static/css/review.css">
+</head>
+<body>
+    <div class="review-container">
+        <div class="review-header">
+            <h1 class="review-title">缺陷检测结果审查</h1>
+            <div class="session-info">
+                <span class="session-badge" id="session-badge">检测会话</span>
+                <button class="back-button" onclick="window.location.href='/'">返回主页</button>
+            </div>
+        </div>
+
+        <div class="defects-container">
+            <!-- 缺陷列表 -->
+            <div class="defects-list">
+                <h3>检测到的缺陷</h3>
+                <div id="defects-list-container">
+                    <div class="no-selection">
+                        <div class="no-selection-icon">🔍</div>
+                        <span>加载中...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 缺陷详情 -->
+            <div class="defect-details">
+                <div id="defect-details-container">
+                    <div class="no-selection">
+                        <div class="no-selection-icon">📋</div>
+                        <span>请选择左侧缺陷项目查看详情</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 缺陷详情模板 -->
+    <template id="defect-details-template">
+        <h3>缺陷详情</h3>
+        
+        <!-- 图像对比 -->
+        <div class="image-comparison">
+            <div class="image-container">
+                <h3>原始图像</h3>
+                <img id="original-image" alt="原始图像">
+            </div>
+            <div class="image-container overlay-container">
+                <h3>缺陷检测结果</h3>
+                <img id="overlay-image" alt="缺陷叠加图">
+                <div class="defect-legend">
+                    <h4>缺陷类别颜色说明</h4>
+                    <div class="legend-item">
+                        <div class="legend-color class-1"></div>
+                        <span>类别1缺陷</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color class-2"></div>
+                        <span>类别2缺陷</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color class-3"></div>
+                        <span>类别3缺陷</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 缺陷信息面板 -->
+        <div class="defect-info">
+            <h4>检测信息</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">文件名</div>
+                    <div class="info-value" id="info-filename">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">检测置信度</div>
+                    <div class="info-value" id="info-confidence">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">缺陷类别</div>
+                    <div class="info-value" id="info-classes">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">分析时间</div>
+                    <div class="info-value" id="info-timestamp">-</div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="/static/js/review.js"></script>
+</body>
+</html>

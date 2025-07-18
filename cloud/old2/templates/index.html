@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urban Construction Eagle Eye - 建筑缺陷检测可视化系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 头部样式 */
+        .header {
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            margin-top: 80px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .content-section {
+            display: none;
+            padding: 2rem 0;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 连接界面样式 */
+        .connect-section {
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .connect-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .connect-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 3rem;
+        }
+
+        .connect-form {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1rem;
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .connect-button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .connect-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .connect-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 进度条样式 */
+        .progress-container {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.idle {
+            background: #666;
+            animation: none;
+        }
+
+        .status-indicator.connecting {
+            background: #ffaa00;
+        }
+
+        .status-indicator.processing {
+            background: #00d4ff;
+        }
+
+        .status-indicator.completed {
+            background: #00ff00;
+            animation: none;
+        }
+
+        .status-indicator.error {
+            background: #ff0000;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .connect-form {
+                margin: 0 1rem;
+            }
+
+            .connect-title {
+                font-size: 2rem;
+            }
+        }
+
+        /* 背景动画 */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    🏗️ Urban Construction Eagle Eye
+                </div>
+                <nav class="nav-tabs">
+                    <div class="nav-tab active" data-tab="connect">连接设备</div>
+                    <div class="nav-tab" data-tab="pointcloud">点云可视化</div>
+                    <div class="nav-tab" data-tab="review">人工复检</div>
+                    <div class="nav-tab" data-tab="analysis">AI分析</div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- 连接设备界面 -->
+            <section id="connect" class="content-section active">
+                <div class="connect-section">
+                    <h1 class="connect-title">建筑缺陷检测可视化系统</h1>
+                    <p class="connect-subtitle">连接到下位机获取rosbag数据进行分析</p>
+                    
+                    <div class="connect-form">
+                        <div class="form-group">
+                            <label class="form-label">设备IP地址</label>
+                            <input type="text" id="hostInput" class="form-input" placeholder="192.168.1.100" value="192.168.1.100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">用户名</label>
+                            <input type="text" id="usernameInput" class="form-input" placeholder="ubuntu" value="ubuntu">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">密码</label>
+                            <input type="password" id="passwordInput" class="form-input" placeholder="请输入密码">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Rosbag路径</label>
+                            <input type="text" id="rosbagPathInput" class="form-input" placeholder="/home/ubuntu/rosbags" value="/home/ubuntu/rosbags">
+                        </div>
+                        
+                        <button id="connectButton" class="connect-button">
+                            <span class="status-indicator idle"></span>
+                            连接并获取数据
+                        </button>
+                        
+                        <div id="progressContainer" class="progress-container">
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <div id="progressText" class="progress-text">准备中...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 点云可视化界面 -->
+            <section id="pointcloud" class="content-section">
+                <div class="card">
+                    <h2 class="card-title">3D点云可视化</h2>
+                    <div id="pointcloudContainer" style="height: 600px; background: #000; border-radius: 10px; position: relative;">
+                        <div id="pointcloudViewer" style="width: 100%; height: 100%;"></div>
+                        <div id="mapContainer" style="position: absolute; top: 10px; right: 10px; width: 300px; height: 200px; background: rgba(255,255,255,0.9); border-radius: 5px;"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title">数据统计</h2>
+                    <div id="statisticsContainer">
+                        <div class="statistics-loading">正在加载数据...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 人工复检界面 -->
+            <section id="review" class="content-section">
+                <div class="card">
+                    <h2 class="card-title">缺陷复检</h2>
+                    <div id="reviewContainer">
+                        <div class="review-loading">正在加载复检数据...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI分析界面 -->
+            <section id="analysis" class="content-section">
+                <div class="card">
+                    <h2 class="card-title">AI智能分析</h2>
+                    <div id="analysisContainer">
+                        <div class="analysis-loading">正在加载分析结果...</div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 引入Three.js用于3D可视化 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.js"></script>
+    
+    <!-- 引入高德地图API -->
+    <script src="https://webapi.amap.com/loader.js"></script>
+    
+    <script>
+        // 全局变量
+        let currentSession = null;
+        let pointcloudScene = null;
+        let amapInstance = null;
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            // 初始化标签页切换
+            initTabs();
+            
+            // 初始化连接功能
+            initConnect();
+            
+            // 初始化3D可视化
+            init3DViewer();
+            
+            // 初始化地图
+            initAMap();
+            
+            // 定期检查状态
+            setInterval(checkStatus, 2000);
+        }
+
+        function initTabs() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            const sections = document.querySelectorAll('.content-section');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.dataset.tab;
+                    
+                    // 更新标签页状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 更新内容区域
+                    sections.forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    document.getElementById(targetTab).classList.add('active');
+                    
+                    // 根据标签页执行相应的初始化
+                    switch(targetTab) {
+                        case 'pointcloud':
+                            loadPointcloudData();
+                            break;
+                        case 'review':
+                            loadReviewData();
+                            break;
+                        case 'analysis':
+                            loadAnalysisData();
+                            break;
+                    }
+                });
+            });
+        }
+
+        function initConnect() {
+            const connectButton = document.getElementById('connectButton');
+            const progressContainer = document.getElementById('progressContainer');
+            
+            connectButton.addEventListener('click', function() {
+                const config = {
+                    host: document.getElementById('hostInput').value,
+                    username: document.getElementById('usernameInput').value,
+                    password: document.getElementById('passwordInput').value,
+                    rosbag_path: document.getElementById('rosbagPathInput').value
+                };
+                
+                if (!config.host || !config.username || !config.password) {
+                    alert('请填写完整的连接信息');
+                    return;
+                }
+                
+                startConnection(config);
+            });
+        }
+
+        async function startConnection(config) {
+            const button = document.getElementById('connectButton');
+            const indicator = button.querySelector('.status-indicator');
+            const progressContainer = document.getElementById('progressContainer');
+            
+            // 更新UI状态
+            button.disabled = true;
+            indicator.className = 'status-indicator connecting';
+            progressContainer.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    currentSession = result.session_id;
+                    indicator.className = 'status-indicator processing';
+                    updateProgress(10, '连接成功，开始下载数据...');
+                } else {
+                    throw new Error(result.detail || '连接失败');
+                }
+                
+            } catch (error) {
+                console.error('连接失败:', error);
+                indicator.className = 'status-indicator error';
+                updateProgress(0, '连接失败: ' + error.message);
+                button.disabled = false;
+            }
+        }
+
+        async function checkStatus() {
+            if (!currentSession) return;
+            
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                
+                const indicator = document.querySelector('.status-indicator');
+                const button = document.getElementById('connectButton');
+                
+                switch(status.status) {
+                    case 'connecting':
+                        indicator.className = 'status-indicator connecting';
+                        updateProgress(status.progress, status.message);
+                        break;
+                    case 'downloading':
+                        indicator.className = 'status-indicator processing';
+                        updateProgress(status.progress, status.message);
+                        break;
+                    case 'processing':
+                        indicator.className = 'status-indicator processing';
+                        updateProgress(status.progress, status.message);
+                        break;
+                    case 'completed':
+                        indicator.className = 'status-indicator completed';
+                        updateProgress(100, '处理完成');
+                        button.disabled = false;
+                        // 自动切换到点云可视化界面
+                        document.querySelector('[data-tab="pointcloud"]').click();
+                        break;
+                    case 'error':
+                        indicator.className = 'status-indicator error';
+                        updateProgress(0, status.message);
+                        button.disabled = false;
+                        break;
+                }
+                
+            } catch (error) {
+                console.error('检查状态失败:', error);
+            }
+        }
+
+        function updateProgress(progress, message) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressFill.style.width = progress + '%';
+            progressText.textContent = message;
+        }
+
+        function init3DViewer() {
+            // 初始化Three.js场景
+            const container = document.getElementById('pointcloudViewer');
+            
+            if (!container) return;
+            
+            // 创建场景
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+            
+            // 创建相机
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+            
+            // 创建渲染器
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            
+            // 创建控制器
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // 添加光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // 保存场景引用
+            pointcloudScene = { scene, camera, renderer, controls };
+            
+            // 渲染循环
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            // 响应窗口大小变化
+            window.addEventListener('resize', function() {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        }
+
+        // 获取地图配置
+        async function getMapConfig() {
+            try {
+                const response = await fetch('/api/map/config');
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    return result.data;
+                } else {
+                    console.error('获取地图配置失败:', result.error);
+                    return null;
+                }
+            } catch (error) {
+                console.error('获取地图配置错误:', error);
+                return null;
+            }
+        }
+
+        // 更新地图初始化函数
+        async function initAMap() {
+            // 初始化高德地图（在mapContainer中）
+            const mapContainer = document.getElementById('mapContainer');
+            if (!mapContainer) return;
+            
+            // 获取地图配置
+            const mapConfig = await getMapConfig();
+            if (!mapConfig) {
+                console.error('无法获取地图配置');
+                return;
+            }
+            
+            // 设置安全密钥
+            if (mapConfig.security_code) {
+                window._AMapSecurityConfig = {
+                    securityJsCode: mapConfig.security_code
+                };
+            }
+            
+            // 加载高德地图API
+            AMapLoader.load({
+                key: mapConfig.api_key,
+                version: '2.0',
+                plugins: [
+                    'AMap.Scale',
+                    'AMap.ToolBar',
+                    'AMap.MapType',
+                    'AMap.Marker',
+                    'AMap.InfoWindow',
+                    'AMap.Polyline',
+                    'AMap.Polygon',
+                    'AMap.Circle'
+                ]
+            }).then((AMap) => {
+                // 创建地图实例
+                amapInstance = new AMap.Map('mapContainer', {
+                    center: [116.404, 39.915], // 地图中心点
+                    zoom: 15, // 缩放级别
+                    mapStyle: 'amap://styles/darkblue', // 深蓝色主题
+                    viewMode: '2D' // 2D视图
+                });
+                
+                // 添加控件
+                amapInstance.addControl(new AMap.Scale());
+                amapInstance.addControl(new AMap.ToolBar());
+                amapInstance.addControl(new AMap.MapType());
+                
+                // 地图加载完成后的回调
+                amapInstance.on('complete', () => {
+                    console.log('高德地图加载完成');
+                });
+                
+            }).catch((e) => {
+                console.error('高德地图加载失败:', e);
+            });
+        }
+
+        async function loadPointcloudData() {
+            if (!currentSession) {
+                document.getElementById('statisticsContainer').innerHTML = '<div class="statistics-loading">请先连接设备获取数据</div>';
+                return;
+            }
+            
+            try {
+                // 加载点云数据
+                const pointcloudResponse = await fetch(`/api/pointcloud/${currentSession}`);
+                const pointcloudData = await pointcloudResponse.json();
+                
+                if (pointcloudResponse.ok) {
+                    renderPointcloud(pointcloudData);
+                }
+                
+                // 加载统计数据
+                const analysisResponse = await fetch(`/api/analysis/${currentSession}`);
+                const analysisData = await analysisResponse.json();
+                
+                if (analysisResponse.ok) {
+                    renderStatistics(analysisData);
+                }
+                
+                // 加载地图数据
+                const mapResponse = await fetch(`/api/map_data/${currentSession}`);
+                const mapData = await mapResponse.json();
+                
+                if (mapResponse.ok) {
+                    updateMapLocation(mapData);
+                }
+                
+            } catch (error) {
+                console.error('加载点云数据失败:', error);
+            }
+        }
+
+        function renderPointcloud(data) {
+            if (!pointcloudScene || !data.points) return;
+            
+            const { scene } = pointcloudScene;
+            
+            // 清除之前的点云
+            const existingPointcloud = scene.getObjectByName('pointcloud');
+            if (existingPointcloud) {
+                scene.remove(existingPointcloud);
+            }
+            
+            // 创建点云几何体
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(data.points.length * 3);
+            const colors = new Float32Array(data.points.length * 3);
+            
+            for (let i = 0; i < data.points.length; i++) {
+                const point = data.points[i];
+                const color = data.colors[i];
+                
+                positions[i * 3] = point[0];
+                positions[i * 3 + 1] = point[1];
+                positions[i * 3 + 2] = point[2];
+                
+                colors[i * 3] = color[0];
+                colors[i * 3 + 1] = color[1];
+                colors[i * 3 + 2] = color[2];
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            // 创建点云材质
+            const material = new THREE.PointsMaterial({
+                size: 0.01,
+                vertexColors: true
+            });
+            
+            // 创建点云对象
+            const pointcloud = new THREE.Points(geometry, material);
+            pointcloud.name = 'pointcloud';
+            scene.add(pointcloud);
+            
+            // 调整相机位置以适应点云
+            geometry.computeBoundingSphere();
+            const radius = geometry.boundingSphere.radius;
+            pointcloudScene.camera.position.set(radius * 2, radius * 2, radius * 2);
+            pointcloudScene.controls.target.set(0, 0, 0);
+        }
+
+        function renderStatistics(data) {
+            const container = document.getElementById('statisticsContainer');
+            
+            let html = '<div class="statistics-grid">';
+            
+            // 基本统计
+            html += `
+                <div class="stat-item">
+                    <div class="stat-label">总点数</div>
+                    <div class="stat-value">${data.total_points?.toLocaleString() || 'N/A'}</div>
+                </div>
+            `;
+            
+            // 缺陷分析
+            if (data.defect_analysis) {
+                const defectTypes = data.defect_analysis.defect_types || {};
+                
+                Object.entries(defectTypes).forEach(([type, info]) => {
+                    html += `
+                        <div class="stat-item">
+                            <div class="stat-label">${type}缺陷</div>
+                            <div class="stat-value">${info.count || 0}</div>
+                            <div class="stat-extra">${(info.percentage || 0).toFixed(2)}%</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // 严重程度评估
+            if (data.severity_assessment) {
+                const severity = data.severity_assessment;
+                html += `
+                    <div class="stat-item severity-${severity.level}">
+                        <div class="stat-label">严重程度</div>
+                        <div class="stat-value">${severity.description || 'N/A'}</div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function updateMapLocation(mapData) {
+            if (!amapInstance || !mapData.center) return;
+            
+            // 设置地图中心点
+            amapInstance.setCenter([mapData.center.lng, mapData.center.lat]);
+            amapInstance.setZoom(18);
+            
+            // 添加建筑物标记
+            const marker = new AMap.Marker({
+                position: [mapData.center.lng, mapData.center.lat],
+                title: '建筑物位置'
+            });
+            amapInstance.add(marker);
+            
+            // 如果有边界数据，添加矩形覆盖物
+            if (mapData.bounds) {
+                const rectangle = new AMap.Rectangle({
+                    bounds: new AMap.Bounds([
+                        mapData.bounds.southwest.lng, 
+                        mapData.bounds.southwest.lat
+                    ], [
+                        mapData.bounds.northeast.lng, 
+                        mapData.bounds.northeast.lat
+                    ]),
+                    strokeColor: '#ff0000',
+                    strokeWeight: 2,
+                    strokeOpacity: 0.8,
+                    fillColor: '#ffff00',
+                    fillOpacity: 0.3
+                });
+                amapInstance.add(rectangle);
+            }
+        }
+
+        async function loadReviewData() {
+            if (!currentSession) {
+                document.getElementById('reviewContainer').innerHTML = '<div class="review-loading">请先连接设备获取数据</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/review_images/${currentSession}`);
+                const reviewData = await response.json();
+                
+                if (response.ok) {
+                    renderReviewImages(reviewData);
+                } else {
+                    throw new Error(reviewData.detail || '加载复检数据失败');
+                }
+                
+            } catch (error) {
+                console.error('加载复检数据失败:', error);
+                document.getElementById('reviewContainer').innerHTML = `<div class="review-error">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        function renderReviewImages(reviewData) {
+            const container = document.getElementById('reviewContainer');
+            
+            if (!reviewData || reviewData.length === 0) {
+                container.innerHTML = '<div class="review-empty">暂无复检数据</div>';
+                return;
+            }
+            
+            let html = '<div class="review-grid">';
+            
+            reviewData.forEach((item, index) => {
+                html += `
+                    <div class="review-item" data-id="${item.id}">
+                        <div class="review-images">
+                            <div class="review-image-container">
+                                <img src="${item.original_image}" alt="原图" class="review-image">
+                                <div class="image-label">原图</div>
+                            </div>
+                            <div class="review-image-container">
+                                <img src="${item.overlay_image}" alt="叠加图" class="review-image">
+                                <div class="image-label">缺陷叠加</div>
+                            </div>
+                        </div>
+                        <div class="review-info">
+                            <div class="severity-badge severity-${item.severity}">${item.severity}</div>
+                            <div class="review-actions">
+                                <button class="review-btn pass-btn" onclick="submitReview('${item.id}', 'pass')">通过</button>
+                                <button class="review-btn fail-btn" onclick="submitReview('${item.id}', 'fail')">不通过</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function submitReview(imageId, result) {
+            try {
+                const response = await fetch('/api/review_submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image_id: imageId,
+                        result: result,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // 更新UI状态
+                    const reviewItem = document.querySelector(`[data-id="${imageId}"]`);
+                    if (reviewItem) {
+                        reviewItem.classList.add('reviewed');
+                        reviewItem.classList.add(result);
+                        
+                        const actions = reviewItem.querySelector('.review-actions');
+                        actions.innerHTML = `<div class="review-result ${result}">已${result === 'pass' ? '通过' : '不通过'}</div>`;
+                    }
+                } else {
+                    throw new Error(data.detail || '提交失败');
+                }
+                
+            } catch (error) {
+                console.error('提交复检结果失败:', error);
+                alert('提交失败: ' + error.message);
+            }
+        }
+
+        async function loadAnalysisData() {
+            if (!currentSession) {
+                document.getElementById('analysisContainer').innerHTML = '<div class="analysis-loading">请先连接设备获取数据</div>';
+                return;
+            }
+            
+            try {
+                // 首先尝试加载已有的AI分析结果
+                const existingResponse = await fetch(`/api/analysis/${currentSession}`);
+                if (existingResponse.ok) {
+                    const existingData = await existingResponse.json();
+                    if (existingData.ai_analysis) {
+                        renderAnalysisResults(existingData.ai_analysis);
+                        return;
+                    }
+                }
+                
+                // 如果没有AI分析结果，开始生成
+                document.getElementById('analysisContainer').innerHTML = `
+                    <div class="analysis-generating">
+                        <div class="loading-spinner"></div>
+                        <div>正在生成AI分析报告...</div>
+                        <button onclick="generateAIAnalysis()" class="generate-btn">开始AI分析</button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('加载分析数据失败:', error);
+                document.getElementById('analysisContainer').innerHTML = `<div class="analysis-error">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        async function generateAIAnalysis() {
+            try {
+                const response = await fetch('/api/ai_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: currentSession,
+                        analysis_type: 'building_defect'
+                    })
+                });
+                
+                const analysisResult = await response.json();
+                
+                if (response.ok) {
+                    renderAnalysisResults(analysisResult);
+                } else {
+                    throw new Error(analysisResult.detail || 'AI分析失败');
+                }
+                
+            } catch (error) {
+                console.error('AI分析失败:', error);
+                document.getElementById('analysisContainer').innerHTML = `<div class="analysis-error">AI分析失败: ${error.message}</div>`;
+            }
+        }
+
+        function renderAnalysisResults(analysisData) {
+            const container = document.getElementById('analysisContainer');
+            
+            let html = '<div class="analysis-results">';
+            
+            // 建筑物描述
+            if (analysisData.building_description) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>建筑物描述</h3>
+                        <p>${analysisData.building_description}</p>
+                    </div>
+                `;
+            }
+            
+            // 缺陷分析
+            if (analysisData.defect_analysis) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>缺陷分析</h3>
+                        <div class="defect-grid">
+                `;
+                
+                Object.entries(analysisData.defect_analysis).forEach(([type, info]) => {
+                    html += `
+                        <div class="defect-item">
+                            <div class="defect-type">${type}</div>
+                            <div class="defect-severity">${info.severity}</div>
+                            <div class="defect-count">${info.count}</div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            // 安全评估
+            if (analysisData.safety_assessment) {
+                const safety = analysisData.safety_assessment;
+                html += `
+                    <div class="analysis-section">
+                        <h3>安全评估</h3>
+                        <div class="safety-rating rating-${safety.overall_rating}">
+                            整体评级: ${safety.overall_rating}/5
+                        </div>
+                        <div class="risk-level risk-${safety.risk_level}">
+                            风险等级: ${safety.risk_level}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 维修建议
+            if (analysisData.repair_recommendations) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>维修建议</h3>
+                        <div class="recommendations">
+                `;
+                
+                analysisData.repair_recommendations.forEach(rec => {
+                    html += `
+                        <div class="recommendation-item priority-${rec.priority}">
+                            <div class="rec-priority">${rec.priority}</div>
+                            <div class="rec-area">${rec.area}</div>
+                            <div class="rec-method">${rec.method}</div>
+                            <div class="rec-cost">${rec.estimated_cost}</div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    </script>
+
+    <style>
+        /* 统计数据样式 */
+        .statistics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .stat-extra {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 0.2rem;
+        }
+
+        /* 复检界面样式 */
+        .review-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .review-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .review-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .review-images {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .review-image-container {
+            flex: 1;
+            position: relative;
+        }
+
+        .review-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .image-label {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .review-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .severity-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .severity-severe { background: #ff4444; }
+        .severity-moderate { background: #ff8800; }
+        .severity-mild { background: #ffff00; color: #000; }
+        .severity-minor { background: #00ff00; color: #000; }
+
+        .review-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .review-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .pass-btn {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .pass-btn:hover {
+            background: #00cc00;
+        }
+
+        .fail-btn {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        .fail-btn:hover {
+            background: #cc0000;
+        }
+
+        .review-result {
+            padding: 0.5rem;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .review-result.pass {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .review-result.fail {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        /* 分析结果样式 */
+        .analysis-results {
+            space-y: 1.5rem;
+        }
+
+        .analysis-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .analysis-section h3 {
+            color: #00d4ff;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .defect-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .defect-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .safety-rating {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .rating-5 { color: #00ff00; }
+        .rating-4 { color: #80ff00; }
+        .rating-3 { color: #ffff00; }
+        .rating-2 { color: #ff8000; }
+        .rating-1 { color: #ff0000; }
+
+        .recommendations {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .recommendation-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #00d4ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</body>
+</html>

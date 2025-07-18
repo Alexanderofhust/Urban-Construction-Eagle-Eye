@@ -1,0 +1,35 @@
+# Urban Construction Eagle Eye - 依赖库
+
+# 核心框架
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.4.2
+
+# 数据处理
+numpy==1.24.3
+opencv-python==4.8.1.78
+pillow==10.0.1
+matplotlib==3.7.2
+
+# 机器学习和AI
+google-generativeai==0.3.0
+
+# 网络和通信
+paramiko==3.3.1
+scp==0.14.4
+requests==2.31.0
+
+# 点云处理
+# open3d==0.18.0  # 可选，如果需要完整的点云处理功能
+
+# 文件系统监控
+watchdog==3.0.0
+
+# 数据处理增强
+scipy==1.11.3
+scikit-image==0.22.0
+
+# 开发工具
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4

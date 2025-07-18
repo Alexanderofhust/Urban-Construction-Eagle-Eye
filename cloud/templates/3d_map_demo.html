@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城市建设鹰眼系统 - 3D地图演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .controls {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #map3d {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            min-width: 300px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        
+        .info-panel h3 {
+            margin-bottom: 15px;
+            color: #00ff88;
+            font-size: 18px;
+        }
+        
+        .info-item {
+            margin: 8px 0;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .info-label {
+            color: #aaa;
+        }
+        
+        .info-value {
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    
+    <!-- 高德地图3D配置 -->
+    <script> 
+        window._AMapSecurityConfig = {
+            securityJsCode: '290ddc4b0d33be7bc9b354bc6a4ca614',
+        }
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=6f025e700cbacbb0bb866712d20bb35c&plugin=AMap.ControlBar,AMap.ToolBar,AMap.Polyline,AMap.Polygon,AMap.CircleMarker,AMap.InfoWindow"></script>
+</head>
+
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p>正在加载3D地图...</p>
+    </div>
+    
+    <div class="app-container">
+        <header class="header">
+            <h1>🦅 城市建设鹰眼系统 - 3D建筑物检测</h1>
+            <div class="controls">
+                <button class="btn" onclick="loadDemoData()">🏗️ 加载演示数据</button>
+                <button class="btn" onclick="toggleBuildingHighlight()">✨ 切换特效</button>
+                <button class="btn" onclick="reset3DView()">🔄 重置视角</button>
+            </div>
+        </header>
+        
+        <div class="map-container">
+            <div id="map3d"></div>
+            
+            <div class="info-panel">
+                <h3>📍 检测区域信息</h3>
+                <div class="info-item">
+                    <span class="info-label">状态:</span>
+                    <span class="info-value">
+                        <span class="status-indicator status-active"></span>
+                        实时监测中
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">检测点数:</span>
+                    <span class="info-value" id="point-count">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">建筑物数:</span>
+                    <span class="info-value" id="building-count">1</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">覆盖面积:</span>
+                    <span class="info-value" id="coverage-area">0 m²</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">视角高度:</span>
+                    <span class="info-value" id="view-height">50°</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map3d;
+        let buildingHighlights = [];
+        let pathAnimations = [];
+        let highlightEnabled = true;
+        
+        // 演示数据 - 模拟建筑物轮廓点
+        const demoLocationData = {
+            center: { lat: 39.90923, lon: 116.397428 },
+            bounds: {
+                southwest: { lat: 39.90800, lon: 116.39600 },
+                northeast: { lat: 39.91046, lon: 116.39886 }
+            },
+            points: [
+                { lat: 39.90850, lon: 116.39650 },  // 建筑物角点1
+                { lat: 39.90950, lon: 116.39680 },  // 建筑物角点2
+                { lat: 39.90980, lon: 116.39780 },  // 建筑物角点3
+                { lat: 39.90920, lon: 116.39820 },  // 建筑物角点4
+                { lat: 39.90860, lon: 116.39790 },  // 建筑物角点5
+                { lat: 39.90830, lon: 116.39720 },  // 建筑物角点6
+                { lat: 39.90850, lon: 116.39650 }   // 闭合到起点
+            ],
+            total_points: 7
+        };
+        
+        // 初始化3D地图
+        function initMap3D() {
+            map3d = new AMap.Map('map3d', {
+                rotateEnable: true,
+                pitchEnable: true,
+                zoom: 17,
+                pitch: 50,
+                rotation: -15,
+                viewMode: '3D', // 开启3D视图
+                zooms: [2, 20],
+                center: [116.397428, 39.90923], // 北京天安门
+                mapStyle: 'amap://styles/normal',
+                resizeEnable: true,
+                showBuildingBlock: true, // 显示建筑物
+                features: ['bg', 'road', 'building', 'point']
+            });
+            
+            // 添加3D控制栏
+            const controlBar = new AMap.ControlBar({
+                position: {
+                    right: '10px',
+                    top: '10px'
+                }
+            });
+            controlBar.addTo(map3d);
+            
+            // 添加工具栏
+            const toolBar = new AMap.ToolBar({
+                position: {
+                    right: '40px',
+                    top: '110px'
+                }
+            });
+            toolBar.addTo(map3d);
+            
+            // 地图加载完成后隐藏loading
+            map3d.on('complete', () => {
+                document.getElementById('loading').style.display = 'none';
+                console.log('3D地图加载完成');
+                
+                // 自动加载演示数据
+                setTimeout(() => {
+                    loadDemoData();
+                }, 1000);
+            });
+            
+            // 监听视角变化
+            map3d.on('mapmove', updateViewInfo);
+        }
+        
+        // 加载演示数据
+        function loadDemoData() {
+            updateMapWithLocation(demoLocationData);
+            createBuildingHighlight(demoLocationData);
+            updateInfoPanel(demoLocationData);
+        }
+        
+        // 更新地图位置数据
+        function updateMapWithLocation(locationData) {
+            // 清除之前的普通覆盖物
+            map3d.clearMap();
+            
+            if (locationData.bounds) {
+                // 创建检测区域边界
+                const rectangle = new AMap.Rectangle({
+                    bounds: new AMap.Bounds(
+                        [locationData.bounds.southwest.lon, locationData.bounds.southwest.lat],
+                        [locationData.bounds.northeast.lon, locationData.bounds.northeast.lat]
+                    ),
+                    strokeColor: '#0066FF',
+                    strokeWeight: 2,
+                    strokeOpacity: 0.6,
+                    fillColor: '#0066FF',
+                    fillOpacity: 0.05,
+                    zIndex: 10
+                });
+                
+                map3d.add(rectangle);
+                
+                // 调整地图视野
+                map3d.setBounds(rectangle.getBounds(), false, [100, 100, 100, 100]);
+                
+                // 设置3D视角
+                setTimeout(() => {
+                    map3d.setPitch(60);
+                    map3d.setRotation(-20);
+                }, 1500);
+            }
+            
+            // 添加中心标记
+            if (locationData.center) {
+                const centerMarker = new AMap.Marker({
+                    position: [locationData.center.lon, locationData.center.lat],
+                    title: '建筑检测中心',
+                    icon: new AMap.Icon({
+                        size: new AMap.Size(32, 38),
+                        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png'
+                    }),
+                    zIndex: 150
+                });
+                
+                map3d.add(centerMarker);
+                
+                // 添加信息窗体
+                const infoWindow = new AMap.InfoWindow({
+                    content: `
+                        <div style="padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0;">🏗️ 建筑检测中心</h4>
+                            <p style="margin: 5px 0; font-size: 13px;">📍 ${locationData.center.lat.toFixed(6)}, ${locationData.center.lon.toFixed(6)}</p>
+                            <p style="margin: 5px 0; font-size: 13px;">🔍 检测点数: ${locationData.total_points}</p>
+                            <p style="margin: 5px 0; font-size: 13px;">📊 状态: <span style="color: #00ff88;">🟢 实时监测</span></p>
+                            <p style="margin: 5px 0; font-size: 13px;">⚡ 特效: <span style="color: #ffff00;">🟡 高亮显示</span></p>
+                        </div>
+                    `,
+                    offset: new AMap.Pixel(0, -40)
+                });
+                
+                centerMarker.on('click', () => {
+                    infoWindow.open(map3d, centerMarker.getPosition());
+                });
+            }
+        }
+        
+        // 创建建筑物特效高亮
+        function createBuildingHighlight(locationData) {
+            if (!locationData.points || locationData.points.length < 3) {
+                console.warn('需要至少3个点才能创建建筑物高亮');
+                return;
+            }
+            
+            // 清除之前的特效
+            clearBuildingHighlight();
+            
+            const points = locationData.points.map(point => [point.lon, point.lat]);
+            
+            // 创建多层特效
+            createGlowPolygon(points);
+            createAnimatedBorder(points);
+            createCornerMarkers(points);
+            createPulseCenter(locationData.center);
+            
+            console.log(`建筑物特效高亮已创建，连接 ${points.length} 个点`);
+        }
+        
+        // 创建发光多边形
+        function createGlowPolygon(points) {
+            // 外层发光效果
+            const outerGlow = new AMap.Polygon({
+                path: points,
+                strokeColor: '#00FF88',
+                strokeWeight: 4,
+                strokeOpacity: 0.8,
+                fillColor: '#00FF88',
+                fillOpacity: 0.15,
+                zIndex: 80
+            });
+            
+            // 内层发光效果
+            const innerGlow = new AMap.Polygon({
+                path: points,
+                strokeColor: '#FFFF00',
+                strokeWeight: 2,
+                strokeOpacity: 0.9,
+                fillColor: '#FFFF00',
+                fillOpacity: 0.1,
+                zIndex: 85
+            });
+            
+            map3d.add([outerGlow, innerGlow]);
+            buildingHighlights.push(outerGlow, innerGlow);
+            
+            // 呼吸动画
+            let breathOpacity = 0.15;
+            let breathDirection = 1;
+            const breathInterval = setInterval(() => {
+                breathOpacity += 0.01 * breathDirection;
+                if (breathOpacity >= 0.25) breathDirection = -1;
+                if (breathOpacity <= 0.05) breathDirection = 1;
+                
+                outerGlow.setOptions({ fillOpacity: breathOpacity });
+                innerGlow.setOptions({ fillOpacity: breathOpacity * 0.7 });
+            }, 80);
+            
+            pathAnimations.push({ type: 'interval', interval: breathInterval });
+        }
+        
+        // 创建动画边框
+        function createAnimatedBorder(points) {
+            // 主边框线
+            const borderLine = new AMap.Polyline({
+                path: points,
+                strokeColor: '#FF0066',
+                strokeWeight: 3,
+                strokeOpacity: 0.9,
+                strokeStyle: 'solid',
+                zIndex: 100
+            });
+            
+            // 动画线条
+            const animatedLine = new AMap.Polyline({
+                path: points,
+                strokeColor: '#FFFFFF',
+                strokeWeight: 5,
+                strokeOpacity: 0.7,
+                strokeStyle: 'dashed',
+                zIndex: 95
+            });
+            
+            map3d.add([borderLine, animatedLine]);
+            buildingHighlights.push(borderLine, animatedLine);
+            
+            // 流动动画
+            let dashOffset = 0;
+            const flowInterval = setInterval(() => {
+                dashOffset += 2;
+                if (dashOffset > 20) dashOffset = 0;
+                
+                animatedLine.setOptions({
+                    strokeDasharray: [8, 8],
+                    strokeDashoffset: dashOffset
+                });
+            }, 100);
+            
+            pathAnimations.push({ type: 'interval', interval: flowInterval });
+        }
+        
+        // 创建角点标记
+        function createCornerMarkers(points) {
+            points.forEach((point, index) => {
+                if (index === points.length - 1) return; // 跳过重复的闭合点
+                
+                // 主标记
+                const cornerMarker = new AMap.CircleMarker({
+                    center: point,
+                    radius: 6,
+                    strokeColor: '#FFFFFF',
+                    strokeWeight: 2,
+                    fillColor: index === 0 ? '#FF0000' : '#00FF88',
+                    fillOpacity: 0.9,
+                    zIndex: 120
+                });
+                
+                // 光晕效果
+                const haloMarker = new AMap.CircleMarker({
+                    center: point,
+                    radius: 12,
+                    strokeColor: index === 0 ? '#FF0000' : '#00FF88',
+                    strokeWeight: 1,
+                    fillColor: index === 0 ? '#FF0000' : '#00FF88',
+                    fillOpacity: 0.3,
+                    zIndex: 115
+                });
+                
+                map3d.add([cornerMarker, haloMarker]);
+                buildingHighlights.push(cornerMarker, haloMarker);
+                
+                // 脉冲动画
+                let pulseRadius = 6;
+                let pulseDirection = 1;
+                const pulseInterval = setInterval(() => {
+                    pulseRadius += 0.3 * pulseDirection;
+                    if (pulseRadius >= 9) pulseDirection = -1;
+                    if (pulseRadius <= 6) pulseDirection = 1;
+                    
+                    cornerMarker.setRadius(pulseRadius);
+                    haloMarker.setRadius(pulseRadius * 2);
+                }, 120);
+                
+                pathAnimations.push({ type: 'interval', interval: pulseInterval });
+            });
+        }
+        
+        // 创建中心脉冲效果
+        function createPulseCenter(center) {
+            if (!center) return;
+            
+            const pulseCenter = new AMap.CircleMarker({
+                center: [center.lon, center.lat],
+                radius: 20,
+                strokeColor: '#FFFF00',
+                strokeWeight: 3,
+                strokeOpacity: 0.8,
+                fillColor: '#FFFF00',
+                fillOpacity: 0.2,
+                zIndex: 110
+            });
+            
+            map3d.add(pulseCenter);
+            buildingHighlights.push(pulseCenter);
+            
+            // 扩散动画
+            let expandRadius = 20;
+            let expandOpacity = 0.2;
+            const expandInterval = setInterval(() => {
+                expandRadius += 1;
+                expandOpacity -= 0.008;
+                
+                if (expandRadius >= 40) {
+                    expandRadius = 20;
+                    expandOpacity = 0.2;
+                }
+                
+                pulseCenter.setRadius(expandRadius);
+                pulseCenter.setOptions({ fillOpacity: expandOpacity });
+            }, 50);
+            
+            pathAnimations.push({ type: 'interval', interval: expandInterval });
+        }
+        
+        // 清除建筑物高亮
+        function clearBuildingHighlight() {
+            // 清除动画
+            pathAnimations.forEach(item => {
+                if (item.type === 'interval') {
+                    clearInterval(item.interval);
+                }
+            });
+            pathAnimations = [];
+            
+            // 清除覆盖物
+            if (buildingHighlights.length > 0) {
+                map3d.remove(buildingHighlights);
+                buildingHighlights = [];
+            }
+        }
+        
+        // 切换建筑物高亮
+        function toggleBuildingHighlight() {
+            if (highlightEnabled) {
+                clearBuildingHighlight();
+                highlightEnabled = false;
+                console.log('建筑物特效已关闭');
+            } else {
+                createBuildingHighlight(demoLocationData);
+                highlightEnabled = true;
+                console.log('建筑物特效已开启');
+            }
+        }
+        
+        // 重置3D视角
+        function reset3DView() {
+            map3d.setZoom(17);
+            map3d.setPitch(50);
+            map3d.setRotation(-15);
+            map3d.setCenter([116.397428, 39.90923]);
+        }
+        
+        // 更新信息面板
+        function updateInfoPanel(locationData) {
+            document.getElementById('point-count').textContent = locationData.total_points || 0;
+            
+            // 计算覆盖面积（简单估算）
+            if (locationData.bounds) {
+                const latDiff = locationData.bounds.northeast.lat - locationData.bounds.southwest.lat;
+                const lonDiff = locationData.bounds.northeast.lon - locationData.bounds.southwest.lon;
+                const area = Math.round(latDiff * lonDiff * 111000 * 111000); // 粗略计算
+                document.getElementById('coverage-area').textContent = area.toLocaleString() + ' m²';
+            }
+        }
+        
+        // 更新视角信息
+        function updateViewInfo() {
+            const pitch = Math.round(map3d.getPitch());
+            document.getElementById('view-height').textContent = pitch + '°';
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            initMap3D();
+        });
+        
+        console.log('3D建筑物检测地图演示已加载');
+    </script>
+</body>
+</html>

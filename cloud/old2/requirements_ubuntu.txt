@@ -1,0 +1,79 @@
+# Ubuntu Requirements - ROS2支持版本
+# 适用于Ubuntu 20.04+ with ROS2 Humble/Foxy
+
+# 核心框架
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.4.2
+jinja2==3.1.2
+
+# 数据处理
+numpy==1.24.3
+opencv-python==4.8.1.78
+pillow==10.0.1
+matplotlib==3.7.2
+scipy==1.10.1
+
+# 机器学习和AI
+google-generativeai==0.3.0
+
+# 网络和通信
+paramiko==3.3.1
+scp==0.14.4
+requests==2.31.0
+httpx==0.25.0
+
+# 数据库
+sqlite3
+
+# 点云处理
+open3d==0.18.0
+
+# ROS2相关 (Ubuntu系统支持)
+# 注意：这些包需要先安装ROS2系统包
+# sudo apt install python3-rosbag2 python3-rclpy python3-sensor-msgs python3-std-msgs python3-cv-bridge
+
+# 如果系统包不可用，可以尝试pip安装
+rosbag2-py>=0.15.0
+rclpy>=3.3.0
+
+# 开发和调试工具
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dateutil==2.8.2
+pytz==2023.3
+
+# 系统监控
+psutil==5.9.0
+
+# 图像处理增强
+scikit-image==0.21.0
+
+# 异步支持
+asyncio
+aiofiles==23.2.1
+
+# 日志增强
+loguru==0.7.2
+
+# 配置管理
+python-dotenv==1.0.0
+
+# 高德地图API支持
+geopy==2.3.0
+
+# 数据验证
+jsonschema==4.19.0
+
+# 系统工具
+click==8.1.7
+rich==13.6.0
+
+# 性能优化
+cachetools==5.3.1
+lru-dict==1.2.0
+
+# 测试工具 (开发环境)
+pytest==7.4.2
+pytest-asyncio==0.21.1

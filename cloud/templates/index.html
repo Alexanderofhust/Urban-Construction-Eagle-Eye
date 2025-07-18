@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城市建设鹰眼系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 高德地图 JS API Loader -->
+    <script src="https://webapi.amap.com/loader.js"></script>
+    <!-- 高德地图3D安全配置 -->
+    <script> 
+        window._AMapSecurityConfig = {
+            securityJsCode: '290ddc4b0d33be7bc9b354bc6a4ca614',
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🦅 城市建设鹰眼系统</h1>
+            </div>
+            <div class="nav-menu">
+                <button class="nav-btn active" data-page="dashboard">总览</button>
+                <button class="nav-btn" data-page="pointcloud">点云可视化</button>
+                <button class="nav-btn" data-page="review">缺陷复检</button>
+                <button class="nav-btn" data-page="analysis">AI分析</button>
+                <button class="nav-btn" data-page="statistics">统计报告</button>
+            </div>
+            <div class="nav-status">
+                <span id="connection-status" class="status-indicator disconnected">未连接</span>
+            </div>
+        </nav>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 总览页面 -->
+            <div id="dashboard-page" class="page active">
+                <div class="dashboard-header">
+                    <h2>系统总览</h2>
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="total-sessions">0</div>
+                                <div class="stat-label">会话数量</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🏗️</div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="total-defects">0</div>
+                                <div class="stat-label">发现缺陷</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <div class="stat-number" id="reviewed-count">0</div>
+                                <div class="stat-label">已复检</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="control-panel">
+                        <h3>连接控制</h3>
+                        <form id="connection-form" class="connection-form">
+                            <div class="form-group">
+                                <label for="host">下位机IP地址:</label>
+                                <input type="text" id="host" name="host" placeholder="192.168.1.100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="username">用户名:</label>
+                                <input type="text" id="username" name="username" placeholder="ubuntu" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">密码:</label>
+                                <input type="password" id="password" name="password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="data-path">数据路径:</label>
+                                <input type="text" id="data-path" name="data_path" placeholder="/home/ubuntu/data" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="connect-btn">
+                                <span class="btn-text">连接并下载数据</span>
+                                <span class="btn-loading" style="display: none;">连接中...</span>
+                            </button>
+                        </form>
+                        
+                        <div id="progress-container" class="progress-container" style="display: none;">
+                            <div class="progress-label">下载进度</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div class="progress-text" id="progress-text">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="sessions-panel">
+                        <h3>会话列表</h3>
+                        <div id="sessions-list" class="sessions-list">
+                            <!-- 会话列表将在这里动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 点云可视化页面 -->
+            <div id="pointcloud-page" class="page">
+                <div class="page-header">
+                    <h2>点云可视化</h2>
+                    <div class="page-controls">
+                        <select id="session-selector" class="select-input">
+                            <option value="">选择会话</option>
+                        </select>
+                        <button id="load-pointcloud-btn" class="btn btn-primary">加载点云</button>
+                    </div>
+                </div>
+                
+                <div class="pointcloud-container">
+                    <div class="pointcloud-viewer">
+                        <div id="pointcloud-canvas" class="canvas-container"></div>
+                        <div class="viewer-controls">
+                            <button id="reset-view-btn" class="btn btn-secondary">重置视角</button>
+                            <button id="toggle-colors-btn" class="btn btn-secondary">切换颜色</button>
+                        </div>
+                    </div>
+                    
+                    <div class="pointcloud-info">
+                        <h4>点云信息</h4>
+                        <div id="pointcloud-stats" class="info-panel">
+                            <div class="info-item">
+                                <span class="info-label">点数量:</span>
+                                <span class="info-value" id="points-count">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">包围盒:</span>
+                                <span class="info-value" id="bounding-box">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">中心点:</span>
+                                <span class="info-value" id="center-point">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="map-container">
+                            <div class="map-header">
+                                <h4>🗺️ 3D地图位置</h4>
+                                <div class="map-controls">
+                                    <button class="btn-icon" onclick="toggleMapView()" title="切换2D/3D视图">
+                                        <span id="map-view-icon">🌐</span>
+                                    </button>
+                                    <button class="btn-icon" onclick="toggleBuildingEffect()" title="切换建筑特效">
+                                        <span id="effect-icon">✨</span>
+                                    </button>
+                                    <button class="btn-icon" onclick="openFullscreenMap()" title="全屏地图">
+                                        <span>🔍</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="amap-container" class="map-view"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 缺陷复检页面 -->
+            <div id="review-page" class="page">
+                <div class="page-header">
+                    <h2>缺陷复检</h2>
+                    <div class="page-controls">
+                        <select id="review-session-selector" class="select-input">
+                            <option value="">选择会话</option>
+                        </select>
+                        <button id="load-defects-btn" class="btn btn-primary">加载缺陷</button>
+                    </div>
+                </div>
+                
+                <div class="review-container">
+                    <div class="defects-list">
+                        <h4>缺陷列表 (按严重程度排序)</h4>
+                        <div id="defects-list" class="defects-grid">
+                            <!-- 缺陷列表将在这里动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <div class="review-panel" id="review-panel" style="display: none;">
+                        <div class="review-header">
+                            <h4>缺陷详情</h4>
+                            <div class="defect-severity">
+                                <span class="severity-label">严重程度:</span>
+                                <span class="severity-value" id="current-severity">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="review-images">
+                            <div class="image-panel">
+                                <h5>原始图像</h5>
+                                <img id="original-image" class="review-image" alt="原始图像">
+                            </div>
+                            <div class="image-panel">
+                                <h5>缺陷标注</h5>
+                                <img id="overlay-image" class="review-image" alt="叠加图像">
+                            </div>
+                        </div>
+                        
+                        <div class="review-actions">
+                            <button id="approve-btn" class="btn btn-success">✅ 通过</button>
+                            <button id="reject-btn" class="btn btn-danger">❌ 不通过</button>
+                            <div class="review-progress">
+                                <span id="review-progress-text">0/0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI分析页面 -->
+            <div id="analysis-page" class="page">
+                <div class="page-header">
+                    <h2>AI智能分析</h2>
+                    <div class="page-controls">
+                        <select id="analysis-session-selector" class="select-input">
+                            <option value="">选择会话</option>
+                        </select>
+                        <button id="start-analysis-btn" class="btn btn-primary">开始分析</button>
+                    </div>
+                </div>
+                
+                <div class="analysis-container">
+                    <div id="analysis-loading" class="loading-container" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <p>AI正在分析中，请稍候...</p>
+                    </div>
+                    
+                    <div id="analysis-results" class="analysis-results" style="display: none;">
+                        <div class="analysis-header">
+                            <h3>分析报告</h3>
+                            <div class="condition-badge" id="condition-badge">
+                                <span class="condition-text" id="condition-text">良好</span>
+                                <span class="condition-score" id="condition-score">8.5</span>
+                            </div>
+                        </div>
+                        
+                        <div class="analysis-content">
+                            <div class="analysis-section">
+                                <h4>建筑物描述</h4>
+                                <p id="building-description" class="analysis-text"></p>
+                            </div>
+                            
+                            <div class="analysis-section">
+                                <h4>发现的缺陷</h4>
+                                <ul id="defects-found" class="defects-list"></ul>
+                            </div>
+                            
+                            <div class="analysis-section">
+                                <h4>维修建议</h4>
+                                <ul id="repair-suggestions" class="suggestions-list"></ul>
+                            </div>
+                            
+                            <div class="urgency-section">
+                                <h4>紧急程度</h4>
+                                <div class="urgency-indicator" id="urgency-indicator">
+                                    <span class="urgency-level" id="urgency-level">中</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计报告页面 -->
+            <div id="statistics-page" class="page">
+                <div class="page-header">
+                    <h2>统计报告</h2>
+                    <div class="page-controls">
+                        <select id="stats-session-selector" class="select-input">
+                            <option value="">选择会话</option>
+                        </select>
+                        <button id="generate-report-btn" class="btn btn-primary">生成报告</button>
+                    </div>
+                </div>
+                
+                <div class="statistics-container">
+                    <div class="stats-grid">
+                        <div class="stat-panel">
+                            <h4>基础统计</h4>
+                            <div class="stat-items">
+                                <div class="stat-item">
+                                    <span class="stat-label">总图像数:</span>
+                                    <span class="stat-value" id="stat-total-images">-</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">总缺陷数:</span>
+                                    <span class="stat-value" id="stat-total-defects">-</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">已复检数:</span>
+                                    <span class="stat-value" id="stat-reviewed">-</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">通过率:</span>
+                                    <span class="stat-value" id="stat-pass-rate">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-panel">
+                            <h4>缺陷分布</h4>
+                            <div class="defect-distribution">
+                                <div class="defect-type">
+                                    <span class="defect-color red"></span>
+                                    <span class="defect-name">严重缺陷</span>
+                                    <span class="defect-count" id="red-defects">0</span>
+                                </div>
+                                <div class="defect-type">
+                                    <span class="defect-color blue"></span>
+                                    <span class="defect-name">中等缺陷</span>
+                                    <span class="defect-count" id="blue-defects">0</span>
+                                </div>
+                                <div class="defect-type">
+                                    <span class="defect-color green"></span>
+                                    <span class="defect-name">轻微缺陷</span>
+                                    <span class="defect-count" id="green-defects">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 加载脚本 -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/pointcloud.js"></script>
+    <script src="/static/js/review.js"></script>
+    <script src="/static/js/analysis.js"></script>
+    <script src="/static/js/statistics.js"></script>
+    
+    <!-- 高德地图初始化 -->
+    <script type="text/javascript">
+        // 设置安全密钥（从配置中获取）
+        // 设置高德地图安全密钥
+        window._AMapSecurityConfig = {
+            securityJsCode: "{{ amap_security_key or 'your_security_js_code_here' }}",
+        };
+        
+        // 初始化高德地图
+        AMapLoader.load({
+            key: "{{ amap_api_key or '6f025e700cbacbb0bb866712d20bb35c' }}", // 高德地图API密钥
+            version: "2.0", // 指定要加载的 JS API 的版本
+            plugins: ["AMap.Scale", "AMap.ToolBar", "AMap.Marker", "AMap.CircleMarker", "AMap.Geocoder", "AMap.Rectangle", "AMap.ControlBar", "AMap.Polyline", "AMap.Polygon"], // 需要使用的插件列表
+            AMapUI: {
+                version: '1.1',
+                plugins: []
+            }
+        }).then((AMap) => {
+            // 地图加载成功后的回调
+            console.log('高德地图API加载成功');
+            window.AMap = AMap; // 将AMap对象绑定到全局
+            
+            // 初始化3D地图实例
+            if (document.getElementById('amap-container')) {
+                window.mapInstance = new AMap.Map('amap-container', {
+                    rotateEnable: true,
+                    pitchEnable: true,
+                    zoom: 17,
+                    pitch: 50,
+                    rotation: -15,
+                    viewMode: '3D', // 开启3D视图
+                    zooms: [2, 20],
+                    center: [116.397428, 39.90923], // 北京天安门  
+                    mapStyle: 'amap://styles/normal',
+                    resizeEnable: true,
+                    zoomEnable: true,
+                    dragEnable: true,
+                    showBuildingBlock: true, // 显示建筑物
+                    features: ['bg', 'road', 'building', 'point'] // 显示背景、道路、建筑物、标注
+                });
+                
+                // 添加3D控制栏
+                const controlBar = new AMap.ControlBar({
+                    position: {
+                        right: '10px',
+                        top: '10px'
+                    }
+                });
+                controlBar.addTo(window.mapInstance);
+                
+                // 添加工具栏
+                const toolBar = new AMap.ToolBar({
+                    position: {
+                        right: '40px',
+                        top: '110px'
+                    }
+                });
+                toolBar.addTo(window.mapInstance);
+                
+                // 添加比例尺
+                window.mapInstance.addControl(new AMap.Scale());
+                
+                // 建筑物特效图层相关变量
+                window.buildingHighlightLayer = null;
+                window.pathAnimations = [];
+                window.highlightPolygons = [];
+                
+                // 添加地图数据加载功能
+                window.loadLocationData = function(sessionId) {
+                    if (!window.mapInstance) {
+                        console.error('地图实例未初始化');
+                        return;
+                    }
+                    
+                    fetch(`/api/location/${sessionId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.location) {
+                                updateMapWithLocation(data.location);
+                                // 创建建筑物特效高亮
+                                createBuildingHighlight(data.location);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('加载位置数据失败:', error);
+                        });
+                };
+                
+                // 创建建筑物特效高亮显示
+                function createBuildingHighlight(locationData) {
+                    if (!window.effectsEnabled || !locationData.points || locationData.points.length < 2) {
+                        console.warn('特效已关闭或需要至少2个点才能创建建筑物高亮');
+                        return;
+                    }
+                    
+                    // 清除之前的特效
+                    clearBuildingHighlight();
+                    
+                    const points = locationData.points.map(point => [point.lon, point.lat]);
+                    
+                    // 创建连接路径的动态线条
+                    createAnimatedPath(points);
+                    
+                    // 创建建筑物区域高亮多边形
+                    createHighlightPolygon(points);
+                    
+                    // 添加特效标记点
+                    addEffectMarkers(points);
+                    
+                    // 启动脉冲动画
+                    startPulseAnimation();
+                    
+                    console.log(`建筑物特效高亮已创建，连接 ${points.length} 个点`);
+                }
+                
+                // 创建动态路径线条
+                function createAnimatedPath(points) {
+                    // 创建主路径线
+                    const pathLine = new AMap.Polyline({
+                        path: points,
+                        strokeColor: '#00FF00',    // 绿色主线
+                        strokeWeight: 4,
+                        strokeOpacity: 0.8,
+                        strokeStyle: 'solid',
+                        zIndex: 100
+                    });
+                    
+                    // 创建动画效果线
+                    const animationLine = new AMap.Polyline({
+                        path: points,
+                        strokeColor: '#FFFF00',    // 黄色动画线
+                        strokeWeight: 6,
+                        strokeOpacity: 0.6,
+                        strokeStyle: 'dashed',
+                        zIndex: 99
+                    });
+                    
+                    window.mapInstance.add([pathLine, animationLine]);
+                    window.pathAnimations.push(pathLine, animationLine);
+                    
+                    // 添加线条流动动画
+                    let offset = 0;
+                    const animateInterval = setInterval(() => {
+                        offset += 5;
+                        if (offset > 50) offset = 0;
+                        
+                        animationLine.setOptions({
+                            strokeDasharray: [10, 10],
+                            strokeDashoffset: offset
+                        });
+                    }, 100);
+                    
+                    window.pathAnimations.push({ type: 'interval', interval: animateInterval });
+                }
+                
+                // 创建高亮多边形区域
+                function createHighlightPolygon(points) {
+                    // 创建建筑物轮廓多边形
+                    const highlightPolygon = new AMap.Polygon({
+                        path: points,
+                        strokeColor: '#FF0000',     // 红色边框
+                        strokeWeight: 3,
+                        strokeOpacity: 0.9,
+                        fillColor: '#FF0000',       // 红色填充
+                        fillOpacity: 0.2,
+                        zIndex: 90
+                    });
+                    
+                    window.mapInstance.add(highlightPolygon);
+                    window.highlightPolygons.push(highlightPolygon);
+                    
+                    // 添加呼吸效果
+                    let breathOpacity = 0.2;
+                    let breathDirection = 1;
+                    const breatheInterval = setInterval(() => {
+                        breathOpacity += 0.02 * breathDirection;
+                        if (breathOpacity >= 0.4) breathDirection = -1;
+                        if (breathOpacity <= 0.1) breathDirection = 1;
+                        
+                        highlightPolygon.setOptions({
+                            fillOpacity: breathOpacity
+                        });
+                    }, 50);
+                    
+                    window.pathAnimations.push({ type: 'interval', interval: breatheInterval });
+                }
+                
+                // 添加特效标记点
+                function addEffectMarkers(points) {
+                    points.forEach((point, index) => {
+                        // 创建发光效果标记
+                        const glowMarker = new AMap.CircleMarker({
+                            center: point,
+                            radius: 8,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 2,
+                            fillColor: index === 0 ? '#00FF00' : (index === points.length - 1 ? '#FF0000' : '#FFFF00'),
+                            fillOpacity: 0.8,
+                            zIndex: 110
+                        });
+                        
+                        // 创建外层光晕
+                        const haloMarker = new AMap.CircleMarker({
+                            center: point,
+                            radius: 15,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 1,
+                            fillColor: index === 0 ? '#00FF00' : (index === points.length - 1 ? '#FF0000' : '#FFFF00'),
+                            fillOpacity: 0.3,
+                            zIndex: 105
+                        });
+                        
+                        window.mapInstance.add([glowMarker, haloMarker]);
+                        window.highlightPolygons.push(glowMarker, haloMarker);
+                        
+                        // 添加标记动画
+                        let pulseSize = 8;
+                        let pulseDirection = 1;
+                        const pulseInterval = setInterval(() => {
+                            pulseSize += 0.5 * pulseDirection;
+                            if (pulseSize >= 12) pulseDirection = -1;
+                            if (pulseSize <= 8) pulseDirection = 1;
+                            
+                            glowMarker.setRadius(pulseSize);
+                            haloMarker.setRadius(pulseSize + 7);
+                        }, 100);
+                        
+                        window.pathAnimations.push({ type: 'interval', interval: pulseInterval });
+                    });
+                }
+                
+                // 启动脉冲动画
+                function startPulseAnimation() {
+                    // 全局脉冲效果计时器已在各个组件中独立实现
+                    console.log('建筑物特效动画已启动');
+                }
+                
+                // 清除建筑物高亮效果
+                function clearBuildingHighlight() {
+                    // 清除动画计时器
+                    window.pathAnimations.forEach(item => {
+                        if (item.type === 'interval') {
+                            clearInterval(item.interval);
+                        } else if (item.remove) {
+                            window.mapInstance.remove(item);
+                        }
+                    });
+                    window.pathAnimations = [];
+                    
+                    // 清除多边形和标记
+                    if (window.highlightPolygons.length > 0) {
+                        window.mapInstance.remove(window.highlightPolygons);
+                        window.highlightPolygons = [];
+                    }
+                }
+                
+                // 更新地图位置数据
+                function updateMapWithLocation(locationData) {
+                    // 清除之前的覆盖物(但不清除特效)
+                    const overlays = window.mapInstance.getAllOverlays();
+                    overlays.forEach(overlay => {
+                        if (overlay.getOptions && !overlay.getOptions().zIndex) {
+                            window.mapInstance.remove(overlay);
+                        }
+                    });
+                    
+                    if (locationData.bounds) {
+                        // 创建包围框
+                        const rectangle = new AMap.Rectangle({
+                            bounds: new AMap.Bounds(
+                                [locationData.bounds.southwest.lon, locationData.bounds.southwest.lat],
+                                [locationData.bounds.northeast.lon, locationData.bounds.northeast.lat]
+                            ),
+                            strokeColor: '#0066FF',
+                            strokeWeight: 2,
+                            strokeOpacity: 0.8,
+                            fillColor: '#0066FF',
+                            fillOpacity: 0.1,
+                            zIndex: 50
+                        });
+                        
+                        window.mapInstance.add(rectangle);
+                        
+                        // 调整地图视野到3D视角
+                        window.mapInstance.setBounds(rectangle.getBounds(), false, [50, 50, 50, 50]);
+                        
+                        // 设置3D视角
+                        setTimeout(() => {
+                            window.mapInstance.setPitch(60);
+                            window.mapInstance.setRotation(-20);
+                        }, 1000);
+                    }
+                    
+                    // 添加中心点标记
+                    if (locationData.center) {
+                        const centerMarker = new AMap.Marker({
+                            position: [locationData.center.lon, locationData.center.lat],
+                            title: '检测区域中心',
+                            icon: new AMap.Icon({
+                                size: new AMap.Size(32, 38),
+                                image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png'
+                            }),
+                            zIndex: 120
+                        });
+                        
+                        window.mapInstance.add(centerMarker);
+                        
+                        // 添加中心点信息窗体
+                        const infoWindow = new AMap.InfoWindow({
+                            content: `
+                                <div style="padding: 10px;">
+                                    <h4 style="margin: 0 0 5px 0; color: #333;">🏗️ 建筑检测区域</h4>
+                                    <p style="margin: 5px 0; font-size: 12px;">坐标: ${locationData.center.lat.toFixed(6)}, ${locationData.center.lon.toFixed(6)}</p>
+                                    <p style="margin: 5px 0; font-size: 12px;">检测点数: ${locationData.total_points || 0}</p>
+                                    <p style="margin: 5px 0; font-size: 12px;">状态: <span style="color: #00AA00;">🟢 活跃监测</span></p>
+                                </div>
+                            `,
+                            offset: new AMap.Pixel(0, -30)
+                        });
+                        
+                        centerMarker.on('click', () => {
+                            infoWindow.open(window.mapInstance, centerMarker.getPosition());
+                        });
+                    }
+                    
+                    console.log(`3D地图已更新，显示 ${locationData.total_points || 0} 个位置点`);
+                }
+                
+                console.log('3D地图实例创建成功');
+                
+                // 全局变量用于控制特效
+                window.is3DMode = true;
+                window.effectsEnabled = true;
+            }
+            
+            // 切换2D/3D视图
+            window.toggleMapView = function() {
+                if (!window.mapInstance) return;
+                
+                window.is3DMode = !window.is3DMode;
+                const viewIcon = document.getElementById('map-view-icon');
+                
+                if (window.is3DMode) {
+                    // 切换到3D视图
+                    window.mapInstance.setViewMode('3D');
+                    window.mapInstance.setPitch(50);
+                    window.mapInstance.setRotation(-15);
+                    viewIcon.textContent = '🌐';
+                    console.log('已切换到3D视图');
+                } else {
+                    // 切换到2D视图
+                    window.mapInstance.setViewMode('2D');
+                    window.mapInstance.setPitch(0);
+                    window.mapInstance.setRotation(0);
+                    viewIcon.textContent = '🗺️';
+                    console.log('已切换到2D视图');
+                }
+            };
+            
+            // 切换建筑特效
+            window.toggleBuildingEffect = function() {
+                if (!window.mapInstance) return;
+                
+                window.effectsEnabled = !window.effectsEnabled;
+                const effectIcon = document.getElementById('effect-icon');
+                
+                if (window.effectsEnabled) {
+                    effectIcon.textContent = '✨';
+                    // 如果有当前会话数据，重新加载特效
+                    const currentSession = localStorage.getItem('currentSession');
+                    if (currentSession) {
+                        loadLocationData(currentSession);
+                    }
+                    console.log('建筑特效已开启');
+                } else {
+                    effectIcon.textContent = '💫';
+                    clearBuildingHighlight();
+                    console.log('建筑特效已关闭');
+                }
+            };
+            
+            // 打开全屏地图
+            window.openFullscreenMap = function() {
+                window.open('/3d-demo', '_blank');
+            };
+            
+            // 触发地图加载完成事件
+            window.dispatchEvent(new CustomEvent('amapLoaded', { detail: AMap }));
+        }).catch((e) => {
+            console.error('高德地图API加载失败:', e);
+            // 显示错误信息
+            const mapContainer = document.getElementById('amap-container');
+            if (mapContainer) {
+                mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">地图加载失败，请检查网络连接</div>';
+            }
+        });
+    </script>
+</body>
+</html>
