@@ -67,6 +67,9 @@ class EagleEyeApp {
             case 'pointcloud':
                 this.initPointcloudPage();
                 break;
+            case 'map3d':
+                this.initMap3DPage();
+                break;
             case 'review':
                 this.initReviewPage();
                 break;
@@ -177,6 +180,9 @@ class EagleEyeApp {
                 this.selectSession(sessionId);
             });
         });
+        
+        // 更新所有会话选择器的选项列表
+        this.populateSessionSelectors(sessions);
     }
     
     selectSession(sessionId) {
@@ -200,7 +206,7 @@ class EagleEyeApp {
     }
     
     updateSessionSelectors() {
-        const selectors = document.querySelectorAll('.session-selector, #session-selector, #review-session-selector, #analysis-session-selector, #stats-session-selector');
+        const selectors = document.querySelectorAll('.session-selector, #session-selector, #review-session-selector, #analysis-session-selector, #stats-session-selector, #map3d-session-selector');
         
         selectors.forEach(selector => {
             if (this.currentSession) {
@@ -209,6 +215,40 @@ class EagleEyeApp {
                 if (option) {
                     selector.value = this.currentSession;
                 }
+            }
+        });
+    }
+    
+    populateSessionSelectors(sessions) {
+        const selectors = document.querySelectorAll('.session-selector, #session-selector, #review-session-selector, #analysis-session-selector, #stats-session-selector, #map3d-session-selector');
+        
+        selectors.forEach(selector => {
+            // 保存当前选中的值
+            const currentValue = selector.value;
+            
+            // 清空并重新填充选项
+            selector.innerHTML = '<option value="">选择会话</option>';
+            
+            if (sessions && sessions.length > 0) {
+                sessions.forEach(session => {
+                    const option = document.createElement('option');
+                    option.value = session.session_id;
+                    option.textContent = `${session.session_id} - ${new Date(session.created_time).toLocaleString()}`;
+                    selector.appendChild(option);
+                });
+            }
+            
+            // 如果这是3D地图选择器，添加演示选项
+            if (selector.id === 'map3d-session-selector') {
+                const demoOption = document.createElement('option');
+                demoOption.value = 'demo';
+                demoOption.textContent = '演示数据 - 北京天安门';
+                selector.appendChild(demoOption);
+            }
+            
+            // 恢复之前选中的值
+            if (currentValue) {
+                selector.value = currentValue;
             }
         });
     }
@@ -323,8 +363,16 @@ class EagleEyeApp {
     
     // 页面初始化方法
     initPointcloudPage() {
+        console.log('初始化点云可视化页面');
         if (window.PointcloudViewer) {
-            window.pointcloudViewer = new PointcloudViewer();
+            if (!window.pointcloudViewer) {
+                console.log('创建点云可视化器实例');
+                window.pointcloudViewer = new PointcloudViewer();
+            } else {
+                console.log('点云可视化器已存在');
+            }
+        } else {
+            console.error('PointcloudViewer类未加载');
         }
     }
     
@@ -343,6 +391,39 @@ class EagleEyeApp {
     initStatisticsPage() {
         if (window.StatisticsManager) {
             window.statisticsManager = new StatisticsManager();
+        }
+    }
+    
+    initMap3DPage() {
+        console.log('初始化3D地图页面');
+        if (window.Map3DManager) {
+            if (!window.map3DManager) {
+                console.log('创建Map3DManager实例');
+                window.map3DManager = new Map3DManager();
+                
+                // 等待地图初始化完成后自动加载所有会话
+                setTimeout(() => {
+                    if (window.map3DManager && window.map3DManager.map3d) {
+                        console.log('自动加载所有会话数据');
+                        window.map3DManager.loadAllSessions();
+                    }
+                }, 2000);
+            } else {
+                console.log('Map3DManager已存在，触发地图初始化和数据加载');
+                window.map3DManager.initMap3D();
+                
+                // 等待一段时间后加载数据
+                setTimeout(() => {
+                    window.map3DManager.loadAllSessions();
+                }, 1500);
+            }
+        } else {
+            console.error('Map3DManager类未加载');
+        }
+        
+        // 也可以调用全局函数
+        if (window.initMap3DWhenVisible) {
+            window.initMap3DWhenVisible();
         }
     }
 }

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D地图测试</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #1a1a1a; color: #fff; }
+        #test-map { width: 100%; height: 600px; border: 1px solid #ccc; background: #333; }
+        .controls { margin: 10px 0; }
+        button { margin: 5px; padding: 10px; cursor: pointer; background: #007cba; color: white; border: none; border-radius: 4px; }
+        .status { padding: 10px; background: #333; margin: 10px 0; border-radius: 4px; }
+    </style>
+    <script> 
+        window._AMapSecurityConfig = {
+            securityJsCode: '290ddc4b0d33be7bc9b354bc6a4ca614',
+        }
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=6f025e700cbacbb0bb866712d20bb35c&plugin=AMap.ControlBar,AMap.ToolBar,AMap.Polyline,AMap.Polygon,AMap.CircleMarker,AMap.InfoWindow"></script>
+</head>
+
+<body>
+    <h1>3D地图功能测试</h1>
+    <div class="status" id="status">状态: 等待初始化...</div>
+    <div class="controls">
+        <button onclick="initTestMap()">初始化地图</button>
+        <button onclick="addTestData()">添加测试数据</button>
+        <button onclick="reset3DView()">重置3D视角</button>
+        <button onclick="checkAPI()">检查API</button>
+    </div>
+    <div id="test-map"></div>
+
+    <script>
+        let testMap = null;
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = '状态: ' + message;
+            console.log('状态更新:', message);
+        }
+        
+        function checkAPI() {
+            if (typeof AMap !== 'undefined') {
+                updateStatus('AMap API 已加载，版本: ' + (AMap.version || '未知'));
+                return true;
+            } else {
+                updateStatus('AMap API 未加载');
+                return false;
+            }
+        }
+        
+        function initTestMap() {
+            if (!checkAPI()) return;
+            
+            try {
+                updateStatus('正在创建地图实例...');
+                
+                testMap = new AMap.Map('test-map', {
+                    rotateEnable: true,
+                    pitchEnable: true,
+                    zoom: 16,
+                    pitch: 45,
+                    rotation: -15,
+                    viewMode: '3D',
+                    zooms: [3, 20],
+                    center: [116.397428, 39.90923], // 北京天安门
+                    mapStyle: 'amap://styles/normal',
+                    resizeEnable: true,
+                    showBuildingBlock: true,
+                    features: ['bg', 'road', 'building', 'point']
+                });
+                
+                // 添加3D控制栏
+                const controlBar = new AMap.ControlBar({
+                    position: { right: '10px', top: '10px' }
+                });
+                controlBar.addTo(testMap);
+                
+                testMap.on('complete', () => {
+                    updateStatus('地图加载完成！中心点: ' + testMap.getCenter().toString());
+                });
+                
+                updateStatus('地图实例创建成功，等待加载完成...');
+                
+            } catch (error) {
+                updateStatus('地图初始化失败: ' + error.message);
+                console.error('地图初始化失败:', error);
+            }
+        }
+        
+        function addTestData() {
+            if (!testMap) {
+                updateStatus('请先初始化地图');
+                return;
+            }
+            
+            try {
+                // 添加测试标记
+                const marker = new AMap.Marker({
+                    position: [116.397428, 39.90923],
+                    title: '天安门',
+                    icon: new AMap.Icon({
+                        size: new AMap.Size(32, 38),
+                        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png'
+                    })
+                });
+                
+                testMap.add(marker);
+                
+                // 添加测试多边形
+                const polygon = new AMap.Polygon({
+                    path: [
+                        [116.39650, 39.90850],
+                        [116.39680, 39.90950],
+                        [116.39780, 39.90980],
+                        [116.39820, 39.90920],
+                        [116.39790, 39.90860],
+                        [116.39720, 39.90830],
+                        [116.39650, 39.90850]
+                    ],
+                    strokeColor: '#FF0066',
+                    strokeWeight: 3,
+                    strokeOpacity: 0.9,
+                    fillColor: '#FF0066',
+                    fillOpacity: 0.2
+                });
+                
+                testMap.add(polygon);
+                updateStatus('测试数据已添加 - 标记和多边形');
+                
+            } catch (error) {
+                updateStatus('添加测试数据失败: ' + error.message);
+                console.error('添加测试数据失败:', error);
+            }
+        }
+        
+        function reset3DView() {
+            if (!testMap) {
+                updateStatus('请先初始化地图');
+                return;
+            }
+            
+            try {
+                testMap.setZoom(16);
+                testMap.setPitch(45);
+                testMap.setRotation(-15);
+                testMap.setCenter([116.397428, 39.90923]);
+                updateStatus('3D视角已重置到天安门');
+            } catch (error) {
+                updateStatus('重置视角失败: ' + error.message);
+            }
+        }
+        
+        // 页面加载完成后检查API
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkAPI();
+                if (typeof AMap !== 'undefined') {
+                    initTestMap();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

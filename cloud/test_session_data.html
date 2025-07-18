@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会话数据测试</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #1a1a1a; color: #fff; }
+        #test-map { width: 100%; height: 600px; border: 1px solid #ccc; background: #333; }
+        .controls { margin: 10px 0; }
+        button { margin: 5px; padding: 10px; cursor: pointer; background: #007cba; color: white; border: none; border-radius: 4px; }
+        select { margin: 5px; padding: 10px; background: #333; color: white; border: 1px solid #666; border-radius: 4px; }
+        .status { padding: 10px; background: #333; margin: 10px 0; border-radius: 4px; }
+        .info { background: #444; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    </style>
+    <script> 
+        window._AMapSecurityConfig = {
+            securityJsCode: '290ddc4b0d33be7bc9b354bc6a4ca614',
+        }
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=6f025e700cbacbb0bb866712d20bb35c&plugin=AMap.ControlBar,AMap.ToolBar,AMap.Polyline,AMap.Polygon,AMap.CircleMarker,AMap.InfoWindow"></script>
+</head>
+
+<body>
+    <h1>真实会话数据测试</h1>
+    <div class="status" id="status">状态: 等待初始化...</div>
+    
+    <div class="controls">
+        <select id="session-selector">
+            <option value="">选择会话</option>
+        </select>
+        <button onclick="loadSelectedSession()">加载会话数据</button>
+        <button onclick="testAPI()">测试API</button>
+        <button onclick="reset3DView()">重置视角</button>
+    </div>
+    
+    <div class="info" id="session-info">会话信息将显示在这里</div>
+    
+    <div id="test-map"></div>
+
+    <script>
+        let testMap = null;
+        let currentSessionData = null;
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = '状态: ' + message;
+            console.log('状态更新:', message);
+        }
+        
+        function updateSessionInfo(data) {
+            const infoDiv = document.getElementById('session-info');
+            if (data) {
+                infoDiv.innerHTML = `
+                    <h4>会话数据信息:</h4>
+                    <p><strong>中心点:</strong> ${data.center.lat.toFixed(6)}, ${data.center.lon.toFixed(6)}</p>
+                    <p><strong>点数:</strong> ${data.total_points}</p>
+                    <p><strong>边界:</strong> SW: ${data.bounds.southwest.lat.toFixed(6)}, ${data.bounds.southwest.lon.toFixed(6)} | NE: ${data.bounds.northeast.lat.toFixed(6)}, ${data.bounds.northeast.lon.toFixed(6)}</p>
+                `;
+            } else {
+                infoDiv.innerHTML = '会话信息将显示在这里';
+            }
+        }
+        
+        async function loadSessions() {
+            try {
+                const response = await fetch('http://127.0.0.1:8001/api/sessions');
+                const data = await response.json();
+                
+                const selector = document.getElementById('session-selector');
+                selector.innerHTML = '<option value="">选择会话</option>';
+                
+                data.sessions.forEach(session => {
+                    const option = document.createElement('option');
+                    option.value = session.session_id;
+                    option.textContent = `${session.session_id} - ${new Date(session.created_time).toLocaleString()}`;
+                    selector.appendChild(option);
+                });
+                
+                updateStatus(`已加载 ${data.sessions.length} 个会话`);
+            } catch (error) {
+                updateStatus('加载会话列表失败: ' + error.message);
+            }
+        }
+        
+        async function loadSelectedSession() {
+            const selector = document.getElementById('session-selector');
+            const sessionId = selector.value;
+            
+            if (!sessionId) {
+                updateStatus('请先选择一个会话');
+                return;
+            }
+            
+            try {
+                updateStatus('正在加载会话数据...');
+                const response = await fetch(`http://127.0.0.1:8001/api/location/${sessionId}`);
+                const data = await response.json();
+                
+                if (data.location) {
+                    currentSessionData = data.location;
+                    updateSessionInfo(currentSessionData);
+                    updateMapWithSessionData(currentSessionData);
+                    updateStatus('会话数据加载成功');
+                } else {
+                    updateStatus('会话数据格式错误');
+                }
+            } catch (error) {
+                updateStatus('加载会话数据失败: ' + error.message);
+                console.error('加载错误:', error);
+            }
+        }
+        
+        function updateMapWithSessionData(locationData) {
+            if (!testMap) {
+                initTestMap();
+                setTimeout(() => updateMapWithSessionData(locationData), 1000);
+                return;
+            }
+            
+            // 清除现有覆盖物
+            testMap.clearMap();
+            
+            // 设置地图中心
+            testMap.setCenter([locationData.center.lon, locationData.center.lat]);
+            testMap.setZoom(17);
+            testMap.setPitch(45);
+            testMap.setRotation(-15);
+            
+            // 添加中心标记
+            const centerMarker = new AMap.Marker({
+                position: [locationData.center.lon, locationData.center.lat],
+                title: '建筑检测中心',
+                icon: new AMap.Icon({
+                    size: new AMap.Size(32, 38),
+                    image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png'
+                })
+            });
+            testMap.add(centerMarker);
+            
+            // 添加边界矩形
+            if (locationData.bounds) {
+                const rectangle = new AMap.Rectangle({
+                    bounds: new AMap.Bounds(
+                        [locationData.bounds.southwest.lon, locationData.bounds.southwest.lat],
+                        [locationData.bounds.northeast.lon, locationData.bounds.northeast.lat]
+                    ),
+                    strokeColor: '#0066FF',
+                    strokeWeight: 2,
+                    strokeOpacity: 0.8,
+                    fillColor: '#0066FF',
+                    fillOpacity: 0.1
+                });
+                testMap.add(rectangle);
+            }
+            
+            // 添加所有检测点
+            if (locationData.points && locationData.points.length > 0) {
+                locationData.points.forEach((point, index) => {
+                    const marker = new AMap.Marker({
+                        position: [point.lon, point.lat],
+                        title: `检测点 ${index + 1}`,
+                        icon: new AMap.Icon({
+                            size: new AMap.Size(16, 16),
+                            image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png'
+                        })
+                    });
+                    testMap.add(marker);
+                });
+                
+                // 连接所有点形成多边形
+                if (locationData.points.length >= 3) {
+                    const polygon = new AMap.Polygon({
+                        path: locationData.points.map(p => [p.lon, p.lat]),
+                        strokeColor: '#FF0066',
+                        strokeWeight: 3,
+                        strokeOpacity: 0.9,
+                        fillColor: '#FF0066',
+                        fillOpacity: 0.2
+                    });
+                    testMap.add(polygon);
+                }
+            }
+        }
+        
+        function initTestMap() {
+            if (testMap) return;
+            
+            try {
+                updateStatus('正在创建地图实例...');
+                
+                testMap = new AMap.Map('test-map', {
+                    rotateEnable: true,
+                    pitchEnable: true,
+                    zoom: 15,
+                    pitch: 45,
+                    rotation: -15,
+                    viewMode: '3D',
+                    zooms: [3, 20],
+                    center: [117.291629, 31.843232], // 默认中心点
+                    mapStyle: 'amap://styles/normal',
+                    resizeEnable: true,
+                    showBuildingBlock: true,
+                    features: ['bg', 'road', 'building', 'point']
+                });
+                
+                const controlBar = new AMap.ControlBar({
+                    position: { right: '10px', top: '10px' }
+                });
+                controlBar.addTo(testMap);
+                
+                testMap.on('complete', () => {
+                    updateStatus('地图加载完成！');
+                });
+                
+                updateStatus('地图实例创建成功，等待加载完成...');
+                
+            } catch (error) {
+                updateStatus('地图初始化失败: ' + error.message);
+                console.error('地图初始化失败:', error);
+            }
+        }
+        
+        function reset3DView() {
+            if (!testMap) return;
+            
+            if (currentSessionData) {
+                testMap.setCenter([currentSessionData.center.lon, currentSessionData.center.lat]);
+                testMap.setZoom(17);
+            } else {
+                testMap.setCenter([117.291629, 31.843232]);
+                testMap.setZoom(15);
+            }
+            testMap.setPitch(45);
+            testMap.setRotation(-15);
+            updateStatus('3D视角已重置');
+        }
+        
+        async function testAPI() {
+            try {
+                const response = await fetch('http://127.0.0.1:8001/api/sessions');
+                const data = await response.json();
+                updateStatus(`API测试成功，找到 ${data.sessions.length} 个会话`);
+                console.log('API响应:', data);
+            } catch (error) {
+                updateStatus('API测试失败: ' + error.message);
+                console.error('API错误:', error);
+            }
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (typeof AMap !== 'undefined') {
+                    initTestMap();
+                    loadSessions();
+                } else {
+                    updateStatus('AMap API未加载');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

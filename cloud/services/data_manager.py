@@ -82,8 +82,8 @@ class DataManager:
                     coords = line.split(',')
                     if len(coords) >= 2:
                         points.append({
-                            "lat": float(coords[0]),
-                            "lon": float(coords[1])
+                            "lon": float(coords[0]),
+                            "lat": float(coords[1])
                         })
             
             if len(points) < 1:
@@ -102,8 +102,8 @@ class DataManager:
             return {
                 "points": points,
                 "bounds": {
-                    "southwest": {"lat": min_lat - margin, "lon": min_lon - margin},
-                    "northeast": {"lat": max_lat + margin, "lon": max_lon + margin}
+                    "southwest": {"lat": min_lat + margin, "lon": min_lon + margin},
+                    "northeast": {"lat": max_lat - margin, "lon": max_lon - margin}
                 },
                 "center": {
                     "lat": (min_lat + max_lat) / 2,

@@ -73,6 +73,9 @@
 .info-value {
     color: #00d4ff;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
 }
 
 .map-container {
@@ -621,4 +624,375 @@
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
+}
+
+/* 3D地图页面样式 */
+.map3d-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    height: calc(100vh - 200px);
+}
+
+.map3d-viewer {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1rem;
+    position: relative;
+    overflow: hidden;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.map3d-canvas {
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1a1a1a;
+    position: relative;
+    /* 确保地图容器有明确的尺寸 */
+}
+
+.map3d-loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(26, 26, 26, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    z-index: 1000;
+}
+
+.map3d-loading-indicator .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #00ff88;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+.map3d-loading-indicator p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.map3d-info-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+    height: fit-content;
+}
+
+.map3d-info-panel h4 {
+    margin-bottom: 1rem;
+    color: #00ff88;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.map3d-status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    background: #00ff88;
+    animation: pulse 2s infinite;
+    vertical-align: middle;
+}
+
+.map3d-status-active {
+    background: #00ff88;
+}
+
+/* 状态文字样式 */
+#map3d-status-indicator {
+    display: inline;
+    white-space: nowrap;
+    color: #00ff88;
+    font-weight: 500;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* 渲染质量控制面板样式 */
+.render-quality-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 浮动的渲染质量控制面板 - 页面右下角定位 */
+.render-quality-panel-floating {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 280px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none; /* 默认隐藏 */
+}
+
+/* 只在点云可视化页面激活时显示 */
+#pointcloud-page.active .render-quality-panel-floating {
+    display: block;
+}
+
+.render-quality-panel h5,
+.render-quality-panel-floating h5 {
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.slider-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.slider-item label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slider-item span {
+    color: #00d4ff;
+    font-weight: 600;
+    font-size: 11px;
+    min-width: 50px;
+    text-align: right;
+}
+
+.slider-item input[type="range"] {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.slider-item input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #00d4ff;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 212, 255, 0.3);
+    transition: all 0.2s ease;
+}
+
+.slider-item input[type="range"]::-webkit-slider-thumb:hover {
+    background: #00a8cc;
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 212, 255, 0.5);
+}
+
+.slider-item input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #00d4ff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 212, 255, 0.3);
+    transition: all 0.2s ease;
+}
+
+.slider-item input[type="range"]::-moz-range-thumb:hover {
+    background: #00a8cc;
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 212, 255, 0.5);
+}
+
+.quality-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 11px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.btn-small:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #00d4ff;
+    color: #00d4ff;
+    transform: translateY(-1px);
+}
+
+.btn-small.active {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: #00d4ff;
+    color: #00d4ff;
+    box-shadow: 0 2px 4px rgba(0, 212, 255, 0.3);
+}
+
+/* 新的预设按钮样式 */
+.btn-preset {
+    padding: 0.5rem 0.8rem;
+    font-size: 11px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-preset:hover {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 168, 204, 0.08) 100%);
+    border-color: rgba(0, 212, 255, 0.6);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 212, 255, 0.2);
+}
+
+.btn-preset.active {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.25) 0%, rgba(0, 168, 204, 0.15) 100%);
+    border-color: #00d4ff;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-preset:active {
+    transform: translateY(0px);
+    box-shadow: 0 2px 4px rgba(0, 212, 255, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    .map3d-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 2fr 1fr;
+    }
+    
+    .render-quality-panel-floating {
+        width: 240px;
+        bottom: 15px;
+        right: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .map3d-container {
+        gap: 1rem;
+    }
+    
+    .map3d-info-panel {
+        padding: 1rem;
+    }
+    
+    .render-quality-panel,
+    .render-quality-panel-floating {
+        padding: 0.8rem;
+    }
+    
+    .render-quality-panel-floating {
+        width: 200px;
+        bottom: 10px;
+        right: 10px;
+        max-height: 300px;
+    }
+    
+    .quality-buttons {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .render-quality-panel-floating {
+        width: 180px;
+        bottom: 5px;
+        right: 5px;
+        max-height: 250px;
+        padding: 0.6rem;
+    }
+    
+    .render-quality-panel-floating h5 {
+        font-size: 12px;
+    }
+    
+    .slider-item label {
+        font-size: 10px;
+    }
+    
+    .slider-item span {
+        font-size: 10px;
+    }
 }
